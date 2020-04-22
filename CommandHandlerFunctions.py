@@ -7,6 +7,7 @@ import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 import logging
 import json
+from threading import Thread
 from time import strftime, sleep
 
 from decorators import *
@@ -19,7 +20,6 @@ logger = logging.getLogger(__name__)
 @with_checks(silent=False)
 @admins_only
 def check(update:telegram.Update, context:telegram.ext.CallbackContext):
-
     if context.chat_data["recording"]:
         update.message.reply_text("All checks passed. Recording is on.")
     elif not context.chat_data["recording"]:
@@ -80,8 +80,9 @@ def delete(update:telegram.Update, context:telegram.ext.CallbackContext):
     deletion_request = {"operator": operator.id, "request_time": request_time}
     context.chat_data["deletion_requests"].append(deletion_request)
 
-    update.message.reply_text(("You have %d messages in my records. \n"
+    confirmation = update.message.reply_text(("You have %d messages in my records. \n"
         "Are you sure you want to delete all of them? \n"
+        "If you don't respond, this request will be cancelled in a minute."
         ) % len(context.chat_data[operator.id]),
         reply_markup=inline_keyboard)
     logger.info("User %s (%d) in chat %s (%d) sent a deletion request. Timestamp: %s" % ( \
@@ -90,4 +91,19 @@ def delete(update:telegram.Update, context:telegram.ext.CallbackContext):
                 update.effective_chat.title,
                 update.effective_chat.id,
                 request_time))
+    
+    # automatically cancel the request after a minute
+    def timeout():
+        sleep(60)
+        if deletion_request in context.chat_data["deletion_requests"]:
+            context.chat_data["deletion_requests"].remove(deletion_request)
+            confirmation.edit_text("Request confirmation timed out.")
+            logger.info("In chat %s (%d), user %s (%d)'s deletion request with time stamp %s timed out." % ( \
+                        update.effective_chat.title,
+                        update.effective_chat.id,
+                        update.effective_user.full_name,
+                        update.effective_user.id,
+                        request_time))
+    request_timer = Thread(target=timeout)
+    request_timer.start()
 
