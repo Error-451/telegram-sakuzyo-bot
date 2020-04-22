@@ -7,11 +7,14 @@ import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 import logging
 import json
+from threading import Thread
+from decorators import *
 
 
 logger = logging.getLogger(__name__)
 
 
+@in_new_thread
 def process_callback_query(update:telegram.Update, context:telegram.ext.CallbackContext):
     query = update.callback_query
     operator = query.from_user

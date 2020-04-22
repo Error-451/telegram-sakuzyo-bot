@@ -89,6 +89,7 @@ def delete(update:telegram.Update, context:telegram.ext.CallbackContext):
                 request_time))
     
     # automatically cancel the request after a minute
+    @in_new_thread
     def timeout():
         sleep(60)
         if deletion_request in context.chat_data["deletion_requests"]:
@@ -100,6 +101,4 @@ def delete(update:telegram.Update, context:telegram.ext.CallbackContext):
                         update.effective_user.full_name,
                         update.effective_user.id,
                         request_time))
-    request_timer = Thread(target=timeout)
-    request_timer.start()
-
+    timeout()

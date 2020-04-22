@@ -6,6 +6,7 @@
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 from functools import wraps # use decorators without disturbing introspection
+from threading import Thread
 
 
 # a decorator for admin-only commands
@@ -40,6 +41,8 @@ def with_checks(silent:bool):
             if not check_chat_type(update.effective_chat, silent): return # only usable in groups
             if ((func.__name__ != "record") and (context.bot.name not in update.message.text)): return
                     # only respond to commands issued to this bot
+            if update.edited_message: return
+                    # do nothing to edited messages
             if not check_permission(update.message, context.bot, silent): return
                     # must have the ability to delete others' messages
 
@@ -90,3 +93,8 @@ def recorded(func:callable):
     return wrapped_func
 
 
+def in_new_thread(func:callable):
+    def wrapped_func(*args, **kwargs):
+        thread = Thread(target=func, args=args, kwargs=kwargs)
+        thread.start()
+    return wrapped_func
