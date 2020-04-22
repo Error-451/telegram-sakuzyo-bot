@@ -30,13 +30,6 @@ def check(update:telegram.Update, context:telegram.ext.CallbackContext):
 @with_checks(silent=False)
 @admins_only
 def start(update:telegram.Update, context:telegram.ext.CallbackContext):
-
-    myself = context.bot
-
-    # does the check first
-    if not check_group_type(update.message): return
-    if not check_permission(update.message, myself): return
-
     if context.chat_data["recording"]: # check if already recording
         update.message.reply_text("Already recording.")
     else:
@@ -85,6 +78,9 @@ def delete(update:telegram.Update, context:telegram.ext.CallbackContext):
         "If you don't respond, this request will be cancelled in a minute."
         ) % len(context.chat_data[operator.id]),
         reply_markup=inline_keyboard)
+
+    context.chat_data[operator.id].append(confirmation.message_id)
+
     logger.info("User %s (%d) in chat %s (%d) sent a deletion request. Timestamp: %s" % ( \
                 update.effective_user.full_name,
                 update.effective_user.id,

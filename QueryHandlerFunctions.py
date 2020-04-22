@@ -16,13 +16,13 @@ def process_callback_query(update:telegram.Update, context:telegram.ext.Callback
     query = update.callback_query
     operator = query.from_user
     query_content = json.loads(query.data)
-    
+    origin = query.message
+
     if query_content["t"] == "del":
         result = process_deletion_request_confirmation(query_content, operator,
                                                        context, update.effective_chat.id)
         if result >= 0: # successful deletion
-            query.edit_message_text("Successfully deleted all your messages in my records.")
-            query.answer(text="Success.")
+            query.answer(text="Your deletion request is processed successfully.", show_alert=True)
             logger.info(("User %s (%d) in chat %s (%d) confirmed the deletion request with timestamp %s,"
                         " deleting %d messages.") % ( \
                         update.effective_user.full_name,
