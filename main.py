@@ -3,6 +3,8 @@
 
 import logging
 import configparser
+import os
+import sys
 
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
@@ -36,12 +38,26 @@ def read_config(config_file:str, section:str, key:str):
 
 
 def main():
+    
+    # First check the arguments
+    for sysarg in sys.argv:
+        if sysarg == "--webhook": use_webhook = True
+        if sysarg == "--heroku": is_heroku = True
+
+    if is_heroku: # On Heroku, use config vars instead of config file.
+        TOKEN = os.environ.get('TOKEN')
+        DATAFILE_NAME = os.environ.get('DATAFILE_NAME','SakuzyoBot.dat')
+        PORT = int(os.environ.get('PORT', '8443'))
+        WEBHOOK_ADDRESS = os.environ.get('APP_ADDRESS')
+    else:
+        TOKEN = read_config('config.ini','General','Token')
+        DATAFILE_NAME = read_config('config.ini','General','Datafile_Name')
+        PORT = int(read_config('config.ini','Webhook','Port'))
+        WEBHOOK_ADDRESS = read_config('config.ini','Webhook','Address')
 
     # initiate the updater with persistence to keep data between restarts
-    persistence_keeper = telegram.ext.PicklePersistence(filename = \
-            read_config('config.ini','General','Datafile_Name'))
-    updater = Updater(read_config('config.ini','General','Token'), \
-            persistence = persistence_keeper, use_context=True)
+    persistence_keeper = telegram.ext.PicklePersistence(filename = DATAFILE_NAME)
+    updater = Updater(TOKEN, persistence = persistence_keeper, use_context=True)
 
     dp = updater.dispatcher
 
@@ -59,9 +75,16 @@ def main():
     # handle errors
     dp.add_error_handler(ehfuncs.error)
     
-    updater.start_polling()
-    logger.info("Started the bot!")
-    updater.idle()
+    if use_webhook:
+        updater.start_webhook(listen="0.0.0.0", port=PORT, url_path=TOKEN)
+        updater.bot.set_webhook(WEBHOOK_ADDRESS + TOKEN)
+        logger.info("Started the bot using webhook mode!")
+    else:
+        if not updater.bot.delete_webhook: # Unset the webhook to use polling.
+            logger.warning("Webhook deletion failed! I am unable to receive updates.")
+        updater.start_polling()
+        logger.info("Started the bot using polling mode!")
+        updater.idle()
 
 
 if __name__ == '__main__':
