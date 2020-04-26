@@ -38,7 +38,7 @@ def with_checks(silent:bool):
             update = args[0]
             context = args[1]
 
-            if not check_chat_type(update.effective_chat, silent): return # only usable in groups
+            if not check_chat_type(update.message): return # only usable in groups
             if ((func.__name__ != "record") and (context.bot.name not in update.message.text)): return
                     # only respond to commands issued to this bot
             if update.edited_message: return
@@ -59,10 +59,9 @@ def with_checks(silent:bool):
     return decorator
 
 
-def check_chat_type(chat:telegram.Chat, silent:bool=False):
-    if chat.type not in ["group", "supergroup"]:
-        if not silent:
-            message.reply_text("Use me in groups or supergroups only!")
+def check_chat_type(message:telegram.Message):
+    if message.chat.type not in ["group", "supergroup"]:
+        message.reply_text("Use me in groups or supergroups only!")
         return 0
     else:
         return 1

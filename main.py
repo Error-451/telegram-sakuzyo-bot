@@ -9,10 +9,12 @@ import sys
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 
+sys.path.append('src/')
 import CommandHandlerFunctions as chfuncs
 import MessageHandlerFunctions as mhfuncs
 import QueryHandlerFunctions as qhfuncs
 import ErrorHandlerFunctions as ehfuncs
+sys.path.pop()
 
 
 logging.basicConfig(format="%(asctime)s [%(name)s][%(levelname)s] %(message)s",
@@ -25,20 +27,22 @@ class ConfigError(Exception):
     pass
 
 
-def read_config(config_file:str, section:str, key:str):
+def read_config(section:str, key:str, config_file:str='config.ini'):
     config = configparser.ConfigParser()
     config.read(config_file)
     if section in config:
         if key in config[section]:
             return config[section][key]
         else:
-            raise ConfigError('Key not found in config file.')
+            raise ConfigError('Key %s not found in config file.' % key)
     else:
-        raise ConfigError('Section not found in config file.')
+        raise ConfigError('Section %s not found in config file.' % section)
 
 
 def main():
     
+    use_webhook = False
+    is_heroku = False
     # First check the arguments
     for sysarg in sys.argv:
         if sysarg == "--webhook": use_webhook = True
@@ -47,13 +51,15 @@ def main():
     if is_heroku: # On Heroku, use config vars instead of config file.
         TOKEN = os.environ.get('TOKEN')
         DATAFILE_NAME = os.environ.get('DATAFILE_NAME','SakuzyoBot.dat')
-        PORT = int(os.environ.get('PORT', '8443'))
-        WEBHOOK_ADDRESS = os.environ.get('APP_ADDRESS')
+        if use_webhook:
+            PORT = int(os.environ.get('PORT', '8443'))
+            WEBHOOK_ADDRESS = os.environ.get('APP_ADDRESS')
     else:
-        TOKEN = read_config('config.ini','General','Token')
-        DATAFILE_NAME = read_config('config.ini','General','Datafile_Name')
-        PORT = int(read_config('config.ini','Webhook','Port'))
-        WEBHOOK_ADDRESS = read_config('config.ini','Webhook','Address')
+        TOKEN = read_config('General','Token')
+        DATAFILE_NAME = read_config('General','Datafile_Name')
+        if use_webhook:
+            PORT = int(read_config('Webhook','Port'))
+            WEBHOOK_ADDRESS = read_config('Webhook','Address')
 
     # initiate the updater with persistence to keep data between restarts
     persistence_keeper = telegram.ext.PicklePersistence(filename = DATAFILE_NAME)

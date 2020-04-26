@@ -16,8 +16,8 @@ from decorators import *
 logger = logging.getLogger(__name__)
 
 
-@recorded
 @with_checks(silent=False)
+@recorded
 @admins_only
 def check(update:telegram.Update, context:telegram.ext.CallbackContext):
     if context.chat_data["recording"]:
@@ -26,8 +26,8 @@ def check(update:telegram.Update, context:telegram.ext.CallbackContext):
         update.message.reply_text("All checks passed. Recording is off.")
 
 
-@recorded
 @with_checks(silent=False)
+@recorded
 @admins_only
 def start(update:telegram.Update, context:telegram.ext.CallbackContext):
     if context.chat_data["recording"]: # check if already recording
@@ -40,8 +40,8 @@ def start(update:telegram.Update, context:telegram.ext.CallbackContext):
             update.effective_chat.id))
 
 
-@recorded
 @with_checks(silent=False)
+@recorded
 @admins_only
 def stop(update:telegram.Update, context:telegram.ext.CallbackContext):
 
@@ -55,8 +55,8 @@ def stop(update:telegram.Update, context:telegram.ext.CallbackContext):
             update.effective_chat.id))
 
 
-@recorded
 @with_checks(silent=False)
+@recorded
 def delete(update:telegram.Update, context:telegram.ext.CallbackContext):
 
     operator = update.effective_user
